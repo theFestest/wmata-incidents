@@ -1,0 +1,14 @@
+name: Run incidents cron
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run function
+        run: pip install -r requirements.txt && python -m api.index

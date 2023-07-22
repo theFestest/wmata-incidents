@@ -4,6 +4,26 @@
 
 This example shows how to use Python on Vercel with Serverless Functions using the [Python Runtime](https://vercel.com/docs/concepts/functions/serverless-functions/runtimes/python).
 
+https://bsky.app/profile/wmata-incidents.bsky.social
+
+## References
+
+https://vercel.com/docs/cron-jobs#cron-expressions
+
+https://vercel.com/docs/concepts/functions/serverless-functions/runtimes/python
+
+https://vercel.com/docs/concepts/functions/serverless-functions/runtimes/python#python-dependencies
+
+https://cloud.google.com/scheduler/docs/creating#begin
+
+https://developer.wmata.com/docs/services/54763641281d83086473f232/operations/54763641281d830c946a3d77?
+
+https://twitter.com/wmata
+
+https://twitter.com/metrorailinfo
+
+https://www.wmata.com/service/status/index.cfm#current-alerts
+
 ## Demo
 
 https://python-hello-world.vercel.app/
