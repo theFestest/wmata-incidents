@@ -1,6 +1,6 @@
 import datetime
 from http.server import BaseHTTPRequestHandler
-from flask import Flask
+# from flask import Flask
 
 
 NAME_OPTIONS = [
@@ -8,25 +8,25 @@ NAME_OPTIONS = [
 ]
 
 
-app = Flask(__name__)
+# app = Flask(__name__)
 
 
-@app.route('/')
-def home():
-    return 'Hello, World!'
+# @app.route('/')
+# def home():
+#     return 'Hello, World!'
 
 
-@app.route('/about')
-def about():
-    return 'About'
+# @app.route('/about')
+# def about():
+#     return 'About'
 
 
-@app.route('/username')
-def username():
-    # todo: generate auth header
+# @app.route('/username')
+# def username():
+#     # todo: generate auth header
 
-    print(f"Cron has been invoked at {datetime.datetime.now()}")
-    return 'Success'
+#     print(f"Cron has been invoked at {datetime.datetime.now()}")
+#     return 'Success'
 
 
 class handler(BaseHTTPRequestHandler):
