@@ -1,5 +1,5 @@
 import datetime
-# from http.server import BaseHTTPRequestHandler
+from http.server import BaseHTTPRequestHandler
 from flask import Flask
 
 
@@ -29,15 +29,15 @@ def username():
     return 'Success'
 
 
-# class handler(BaseHTTPRequestHandler):
+class handler(BaseHTTPRequestHandler):
 
-#     def do_GET(self):
-#         # todo: generate auth header
+    def do_GET(self):
+        # todo: generate auth header
 
-#         print(f"Cron has been invoked at {datetime.datetime.now()}")
+        print(f"Cron has been invoked at {datetime.datetime.now()}")
 
-#         self.send_response(200)
-#         self.send_header('Content-type','text/plain')
-#         self.end_headers()
-#         self.wfile.write('Hello, world!'.encode('utf-8'))
-#         return
+        self.send_response(200)
+        self.send_header('Content-type', 'text/plain')
+        self.end_headers()
+        self.wfile.write('Hello, world!'.encode('utf-8'))
+        return
