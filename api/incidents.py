@@ -6,9 +6,9 @@ from .vercel_kv import KV, KVConfig
 from datetime import datetime
 from atproto import Client
 
-WMATA_API_KEY = os.getenv("api_key")
-BOT_HANDLE = os.getenv("bot_handle")
-BOT_APP_PASSWORD = os.getenv("bot_app_password")
+WMATA_API_KEY = os.getenv("WMATA_API_KEY")
+BOT_HANDLE = os.getenv("BOT_HANDLE")
+BOT_APP_PASSWORD = os.getenv("BOT_APP_PASSWORD")
 
 # Vercel KV related args for state keeping.
 VERCEL_KV_URL = os.getenv("VERCEL_KV_URL")
