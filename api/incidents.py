@@ -2,7 +2,7 @@
 import datetime
 import os
 import requests
-import vercel_kv
+from .vercel_kv import KV, KVConfig
 from datetime import datetime
 from atproto import Client
 
@@ -74,8 +74,8 @@ def get_elevator_incidents() -> requests.Response:
 
 def login_kv():
     global kv_client
-    kv_client = vercel_kv.KV(
-        kv_config=vercel_kv.KVConfig(
+    kv_client = KV(
+        kv_config=KVConfig(
             url=VERCEL_KV_URL,
             rest_api_url=VERCEL_KV_REST_API_URL,
             rest_api_token=VERCEL_KV_REST_API_TOKEN,
