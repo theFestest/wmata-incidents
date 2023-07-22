@@ -5,7 +5,7 @@ import requests
 import vercel_kv
 from datetime import datetime
 from atproto import Client
-from http.server import BaseHTTPRequestHandler
+# from http.server import BaseHTTPRequestHandler
 
 WMATA_API_KEY = os.getenv("api_key")
 BOT_HANDLE = os.getenv("bot_handle")
@@ -21,17 +21,17 @@ at_client = None
 kv_client = None
 
 
-class handler(BaseHTTPRequestHandler):
+# class handler(BaseHTTPRequestHandler):
 
-    def do_GET(self):
+#     def do_GET(self):
 
-        main()
+#         main()
 
-        self.send_response(200)
-        self.send_header('Content-type', 'text/plain')
-        self.end_headers()
-        self.wfile.write('Success!'.encode('utf-8'))
-        return
+#         self.send_response(200)
+#         self.send_header('Content-type', 'text/plain')
+#         self.end_headers()
+#         self.wfile.write('Success!'.encode('utf-8'))
+#         return
 
 
 def send_post(text: str):
