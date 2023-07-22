@@ -11,6 +11,7 @@ WMATA_API_KEY = os.getenv("api_key")
 BOT_HANDLE = os.getenv("bot_handle")
 BOT_APP_PASSWORD = os.getenv("bot_app_password")
 
+# Vercel KV related args for state keeping.
 VERCEL_KV_URL = os.getenv("VERCEL_KV_URL")
 VERCEL_KV_REST_API_URL = os.getenv("VERCEL_KV_REST_API_URL")
 VERCEL_KV_REST_API_TOKEN = os.getenv("VERCEL_KV_REST_API_TOKEN")
@@ -19,8 +20,8 @@ VERCEL_KV_REST_API_READ_ONLY_TOKEN = os.getenv("VERCEL_KV_REST_API_READ_ONLY_TOK
 at_client = None
 kv_client = None
 
-class handler(BaseHTTPRequestHandler):
 
+class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
         self.send_header('Content-type', 'text/plain')
