@@ -92,6 +92,8 @@ def find_new_incidents(incident_list):
         login_kv()
 
     if kv_client.has_auth():
+        # Active incidents are listed in reverse chronological order, reverse for posting.
+        incident_list.reverse()
         for incident in incident_list:
             last_posted_update = kv_client.get(incident["IncidentID"])
             # TODO: what happens if the key has never been used? returns '{"result":null}' i.e. None?
