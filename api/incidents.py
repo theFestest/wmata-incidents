@@ -235,7 +235,7 @@ def main():
         else:
             print("Post failed! Moving on...")
 
-    print(f"Sent {len(posts)} incident posts. Exiting...")
+    print(f"Sent {posts} incident posts. Exiting...")
 
 
 if __name__ == "__main__":
