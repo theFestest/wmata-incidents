@@ -227,7 +227,7 @@ def main():
     # Step 4: Send posts and update last post time in kv.
     posts = 0
     for post_tuple in to_send:
-        breakpoint()
+        # breakpoint()
         if send_post(post_tuple[0]):
             # Only update kv with posts that successfully sent in case of send error
             update_last_posted(post_tuple[1], post_tuple[2])
