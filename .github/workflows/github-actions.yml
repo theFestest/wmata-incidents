@@ -1,14 +1,45 @@
 name: Discover incidents CRON
 
+
 on:
   schedule:
     - cron: "0-50/10 * * * *"
-
+  workflow_call:
+    secrets:
+      BOT_HANDLE:
+        description: 'Bot handle'
+        required: true
+      BOT_APP_PASSWORD:
+        description: 'Bot app password'
+        required: true
+      WMATA_API_KEY:
+        description: 'WMATA api key'
+        required: true
+      VERCEL_KV_URL:
+        description: 'kv store url'
+        required: true
+      VERCEL_KV_REST_API_URL:
+        description: 'kv store api'
+        required: true
+      VERCEL_KV_REST_API_TOKEN:
+        description: 'kv store access token'
+        required: true
+      VERCEL_KV_REST_API_READ_ONLY_TOKEN:
+        description: 'kv store read only token'
+        required: true
 
 jobs:
   report:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Run function
+        env:
+          BOT_HANDLE: ${{ secrets.BOT_HANDLE }}
+          BOT_APP_PASSWORD: ${{ secrets.BOT_APP_PASSWORD }}
+          WMATA_API_KEY: ${{ secrets.WMATA_API_KEY }}
+          VERCEL_KV_URL: ${{ secrets.VERCEL_KV_URL }}
+          VERCEL_KV_REST_API_URL: ${{ secrets.VERCEL_KV_REST_API_URL }}
+          VERCEL_KV_REST_API_TOKEN: ${{ secrets.VERCEL_KV_REST_API_TOKEN }}
+          VERCEL_KV_REST_API_READ_ONLY_TOKEN: ${{ secrets.VERCEL_KV_REST_API_READ_ONLY_TOKEN }}
         run: pip install -r requirements.txt && python -m api.index
