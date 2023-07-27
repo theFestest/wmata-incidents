@@ -44,8 +44,6 @@ Your Python API is now available at `http://localhost:3000/api`.
 
 - Increase frequency of checks (is 5 minutes enough? can go higher on some platforms if needed)
 
-- Consider making post text shorter / more compact
-
 - Enable elevator incidents
 
 - Maybe: remove state via kv store and just check past interval (requires good scheduling to not miss any; might repeat posts sometimes)
@@ -68,3 +66,9 @@ Your Python API is now available at `http://localhost:3000/api`.
 
 - Let manual posts not interfere with running (tag specifically bot posts, or pull more posts if the latest doesn't contain the time)
 
+- Trim spaces at the start/end of lines? avoid whatever caused this: https://bsky.app/profile/wmata-incidents.bsky.social/post/3k3ilx2ejfl2v
+    - modify dedent to not have \n interfere with it
+    - issue was: 'Description': 'Some D14 trips may be delayed due to operator availability. Check where your bus is at \nhttps://buseta.wmata.com/#D14'
+    - see https://github.com/theFestest/wmata-incidents/actions/runs/5678804071/job/15389726708
+
+- Consider replacing internal newlines in provided info to preserve formatting

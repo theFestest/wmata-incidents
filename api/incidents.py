@@ -5,9 +5,10 @@ from typing import Union, Optional
 from textwrap import dedent
 
 import requests
-from .vercel_kv import KV, KVConfig
+# from .vercel_kv import KV, KVConfig
 from datetime import datetime
-from atproto import Client
+from atproto import Client, models
+from nanoatp.richtext import detectLinks
 
 IS_DEPLOYED = os.getenv("IS_DEPLOYED")
 WMATA_API_KEY = os.getenv("WMATA_API_KEY")
@@ -24,6 +25,27 @@ at_client = None
 kv_client = None
 
 
+def check_facets(facets: list):
+    """ Examples of offending facet:
+    Incorrectly ends in period
+    [{'$type': 'app.bsky.richtext.facet', 'index': {'byteStart': 149, 'byteEnd': 178}, 'features': [{'$type': 'app.bsky.richtext.facet#link', 'uri': 'https://buseta.wmata.com/#36.'}]}]
+
+    TODO: Also in correctly matches, fixable?
+    [{'$type': 'app.bsky.richtext.facet', 'index': {'byteStart': 148, 'byteEnd': 157}, 'features': [{'$type': 'app.bsky.richtext.facet#link', 'uri': 'Mt.Vernon'}]}]
+    "Mt.Vernon"
+    """
+    for facet in facets:
+        # If url ends in a dot we accidentally matched a period
+        if facet['features'][0]['uri'][-1] == '.':
+            print(f"Fixing facet for uri: {facet['features'][0]['uri']}")
+            # Move end byte back by one
+            facet['index']['byteEnd'] -= 1
+            # Take slice to skip the last character
+            facet['features'][0]['uri'] = facet['features'][0]['uri'][:-1]
+            print(f"Fixed uri: {facet['features'][0]['uri']}")
+    return facets
+
+
 def send_post(text: str):
     """Send post with the given text content
     return post_ref of generated post
@@ -32,9 +54,37 @@ def send_post(text: str):
     if at_client is None:
         at_login()
 
+    # Make links clickable via rich text facets
+    # Facet model structure:
+    # facets = [
+    #     models.AppBskyRichtextFacet.Main(
+    #         features=[models.AppBskyRichtextFacet.Link(uri=url)],
+    #         # Indicate the start and end of link in text
+    #         index=models.AppBskyRichtextFacet.ByteSlice(byteStart=link_start, byteEnd=link_end)
+    #     )
+    # ]
+    facets = detectLinks(text)
+    # NOTE: sometimes finds urls with bogus trailing dots (bc of WMATA info like "wmata.com.")
+    print(f"Found rich text facets: {facets}")
+    facets = check_facets(facets)
+    print(f"Adjusted rich text facets: {facets}")
+
     try:
         if IS_DEPLOYED is not None:
-            at_client.send_post(text=text)
+            # Only bother embedding facets if there's a url.
+            if len(facets) == 0:
+                at_client.send_post(text=text)
+            else:
+                # Manually create post record to include rich text facets
+                at_client.com.atproto.repo.create_record(
+                    models.ComAtprotoRepoCreateRecord.Data(
+                        repo=at_client.me.did,
+                        collection=models.ids.AppBskyFeedPost,
+                        record=models.AppBskyFeedPost.Main(
+                            createdAt=datetime.now().isoformat(), text=text, facets=facets
+                        )
+                    )
+                )
         else:
             print("Skipping sending post...")
     except Exception as ex:
@@ -81,16 +131,16 @@ def get_elevator_incidents() -> requests.Response:
     pass
 
 
-def login_kv():
-    global kv_client
-    kv_client = KV(
-        kv_config=KVConfig(
-            url=VERCEL_KV_URL,
-            rest_api_url=VERCEL_KV_REST_API_URL,
-            rest_api_token=VERCEL_KV_REST_API_TOKEN,
-            rest_api_read_only_token=VERCEL_KV_REST_API_READ_ONLY_TOKEN
-        )
-    )
+# def login_kv():
+#     global kv_client
+#     kv_client = KV(
+#         kv_config=KVConfig(
+#             url=VERCEL_KV_URL,
+#             rest_api_url=VERCEL_KV_REST_API_URL,
+#             rest_api_token=VERCEL_KV_REST_API_TOKEN,
+#             rest_api_read_only_token=VERCEL_KV_REST_API_READ_ONLY_TOKEN
+#         )
+#     )
 
 
 def get_latest_post_time():
@@ -199,10 +249,10 @@ def make_train_incident_text(incident_dict: dict):
         return ", ".join(cleaned_lines)
 
     return dedent(f"""
-                  Train incident reported for lines: {line_format(incident_dict['LinesAffected'])}.
-                  {incident_dict['IncidentType']}: {incident_dict['Description']}
-                  Updated: {datetime.fromisoformat(incident_dict['DateUpdated'])} (Eastern Time).
-                  """).strip()
+Train incident reported for lines: {line_format(incident_dict['LinesAffected'])}.
+{incident_dict['IncidentType']}: {incident_dict['Description']}
+Updated: {datetime.fromisoformat(incident_dict['DateUpdated'])} (Eastern Time).
+""").strip()
 
 
 def make_bus_incident_text(incident_dict: dict):
@@ -219,10 +269,10 @@ def make_bus_incident_text(incident_dict: dict):
     }
     """
     return dedent(f"""
-                  Bus incident reported for routes: {','.join(incident_dict['RoutesAffected'])}.
-                  {incident_dict['IncidentType']}: {incident_dict['Description']}
-                  Updated: {datetime.fromisoformat(incident_dict['DateUpdated'])} (Eastern Time).
-                  """).strip()
+Bus incident reported for routes: {','.join(incident_dict['RoutesAffected'])}.
+{incident_dict['IncidentType']}: {incident_dict['Description']}
+Updated: {datetime.fromisoformat(incident_dict['DateUpdated'])} (Eastern Time).
+""").strip()
 
 
 def make_elevator_incident_text(incident_dict: dict):
@@ -246,7 +296,12 @@ def make_elevator_incident_text(incident_dict: dict):
         }]
     }
     """
-    pass  # TODO: since there are no incident ids, these need to be identified by Unit name?
+    return dedent(f"""
+Elevator incident reported at: {incident_dict['StationName']}.
+{incident_dict['SymptomDescription']}: {incident_dict['LocationDescription']}.
+Estimated return to service: {datetime.fromisoformat(incident_dict['EstimatedReturnToService'])} (Eastern Time).
+Updated: {datetime.fromisoformat(incident_dict['DateUpdated'])} (Eastern Time).
+""").strip()
 
 
 def main():
@@ -261,20 +316,20 @@ def main():
     # Step 1: Check incidents
     train_resp = requests.get(url="https://api.wmata.com/Incidents.svc/json/Incidents", headers=wmata_header)
     bus_resp = requests.get(url="https://api.wmata.com/Incidents.svc/json/BusIncidents", headers=wmata_header)
-    # elevator_resp = requests.get(url="https://api.wmata.com/Incidents.svc/json/ElevatorIncidents", headers=wmata_header)
+    elevator_resp = requests.get(url="https://api.wmata.com/Incidents.svc/json/ElevatorIncidents", headers=wmata_header)
 
     print("Got train incident response: ", train_resp.json())
     print("Got bus incident response: ", bus_resp.json())
-    # print("Got elevator incident response: ", elevator_resp.json())
+    print("Got elevator incident response: ", elevator_resp.json())
 
-    # Step 2: Collect relevant incidents (check kv for past incident reports)
+    # Step 2: Collect relevant incidents (check latest_update for recency)
     new_train = find_new_incidents(train_resp.json()['Incidents'], latest_update)
     new_bus = find_new_incidents(bus_resp.json()['BusIncidents'], latest_update)
-    # new_elevator = find_new_incidents(elevator_resp.json()['ElevatorIncidents'], latest_update)
+    new_elevator = find_new_incidents(elevator_resp.json()['ElevatorIncidents'], latest_update)
 
     print(f"Got {len(new_train)} new train incidents")
     print(f"Got {len(new_bus)} new bus incidents")
-    # print(f"Got {len(new_elevator)} elevator incidents")
+    print(f"Got {len(new_elevator)} elevator incidents")
 
     # Step 3: Generate posts to send (post_text, incident_id, date_updated)
     to_send: list[(str, str, str)] = []
@@ -284,9 +339,9 @@ def main():
     to_send.extend(
         [(make_bus_incident_text(incident), incident['IncidentID'], incident['DateUpdated']) for incident in new_bus]
         )
-    # to_send.extend(
-    #     [make_elevator_incident_text(incident) for incident in new_elevator]
-    #     )
+    to_send.extend(
+        [(make_elevator_incident_text(incident), '_', incident['DateUpdated']) for incident in new_elevator]
+        )
 
     # Step 4: Send posts and update last post time in kv.
     posts = 0
@@ -307,6 +362,7 @@ def main():
             print("Post failed! Moving on...")
 
     # Will look this time up via atproto on next run.
+    # Note: we post the most recent update last to uphold invarient.
     print(f"Lastest post was from timestamp: {latest_post}.")
     print(f"Sent {posts} incident posts. Exiting...")
 
