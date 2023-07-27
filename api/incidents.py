@@ -110,14 +110,17 @@ def get_latest_post_time():
 
     # Fetch feed of latest posts from this bot
     feed_resp = at_client.bsky.feed.get_author_feed({"actor": BOT_HANDLE, "limit": 1})
+    print(f"Got feed response:\n{feed_resp}")
     # Get post itself
     latest_post = feed_resp.feed[0].post
     # Get text from the post
     post_text: str = latest_post.record.text
+    print(f"Got latest post with text:\n{post_text}")
     # Get post by lines
     post_lines = post_text.splitlines()
     # Get update line: "Updated: 2023-07-25 20:10:19 (Eastern Time)."
     update_line = post_lines[-1]
+    print(f"Post update line reads: {update_line}")
     # Get timestamp from within this line: "2023-07-25 20:10:19"
     time_string = update_line[update_line.find(": ")+len(": "): update_line.find("(")-len("(")]
     # Convert to datetime object for comparisons
@@ -130,8 +133,8 @@ def find_new_incidents(incident_list, latest_post: datetime):
     """Collect new / updated incidents based on kv records
     """
     new_incidents = []
-    if kv_client is None:
-        login_kv()
+    # if kv_client is None:
+    #     login_kv()
 
     # Active incidents are listed in reverse chronological order, reverse for posting.
     incident_list.reverse()
@@ -160,16 +163,16 @@ def find_new_incidents(incident_list, latest_post: datetime):
     return new_incidents
 
 
-def update_last_posted(incident_id, date_updated):
-    """Store last updated time for this incident id in kv.
-    """
-    if kv_client is None:
-        login_kv()
+# def update_last_posted(incident_id, date_updated):
+#     """Store last updated time for this incident id in kv.
+#     """
+#     if kv_client is None:
+#         login_kv()
 
-    if kv_client.has_auth():
-        kv_client.set(incident_id, date_updated)
-    else:
-        print("Unable to access kv store to check incident history! Warning may post spam!")
+#     if kv_client.has_auth():
+#         kv_client.set(incident_id, date_updated)
+#     else:
+#         print("Unable to access kv store to check incident history! Warning may post spam!")
 
 
 def make_train_incident_text(incident_dict: dict):
@@ -196,7 +199,7 @@ def make_train_incident_text(incident_dict: dict):
         return ", ".join(cleaned_lines)
 
     return dedent(f"""
-                  Train incident reported affecting the following lines: {line_format(incident_dict['LinesAffected'])}.
+                  Train incident reported for lines: {line_format(incident_dict['LinesAffected'])}.
                   {incident_dict['IncidentType']}: {incident_dict['Description']}
                   Updated: {datetime.fromisoformat(incident_dict['DateUpdated'])} (Eastern Time).
                   """).strip()
@@ -216,7 +219,7 @@ def make_bus_incident_text(incident_dict: dict):
     }
     """
     return dedent(f"""
-                  Bus incident reported affecting the following routes: {','.join(incident_dict['RoutesAffected'])}.
+                  Bus incident reported for routes: {','.join(incident_dict['RoutesAffected'])}.
                   {incident_dict['IncidentType']}: {incident_dict['Description']}
                   Updated: {datetime.fromisoformat(incident_dict['DateUpdated'])} (Eastern Time).
                   """).strip()
@@ -248,7 +251,7 @@ def make_elevator_incident_text(incident_dict: dict):
 
 def main():
     print(f"Cron has been invoked at {datetime.now()}")
-    # TODO: extra sanity checking on this method since we make more assumptions about post order / wmata update times
+    # Note: Assumes the invarient "latest post has the latest WMATA update time"
     latest_update = get_latest_post_time()
     print(f"Latest post was an update from {latest_update}")
 
@@ -297,7 +300,7 @@ def main():
             breakpoint()
         if send_post(post_tuple[0]):
             # Only update kv with posts that successfully sent in case of send error
-            update_last_posted(post_tuple[1], post_tuple[2])
+            # update_last_posted(post_tuple[1], post_tuple[2])
             posts += 1
             latest_post = post_tuple[2]
         else:
