@@ -1,12 +1,11 @@
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fexamples%2Ftree%2Fmain%2Fpython%2Fhello-world&demo-title=Python%20Hello%20World&demo-description=Use%20Python%20on%20Vercel%20with%20Serverless%20Functions%20using%20the%20Python%20Runtime.&demo-url=https%3A%2F%2Fpython-hello-world.vercel.app%2F&demo-image=https://assets.vercel.com/image/upload/v1669994600/random/python.png)
 
-# Python Hello World
-
-This example shows how to use Python on Vercel with Serverless Functions using the [Python Runtime](https://vercel.com/docs/concepts/functions/serverless-functions/runtimes/python).
+# WMATA Incidents Bot
 
 https://bsky.app/profile/wmata-incidents.bsky.social
 
 ## References
+
+https://vercel.com/docs/concepts/functions/serverless-functions/runtimes/python
 
 https://vercel.com/docs/cron-jobs#cron-expressions
 
@@ -24,6 +23,10 @@ https://twitter.com/metrorailinfo
 
 https://www.wmata.com/service/status/index.cfm#current-alerts
 
+https://wmata.com/initiatives/Open-Data-Hub/MetroPulse.cfm
+
+https://www.pythonmorsels.com/dedent/
+
 ## Demo
 
 https://python-hello-world.vercel.app/
@@ -37,8 +40,31 @@ vercel dev
 
 Your Python API is now available at `http://localhost:3000/api`.
 
-## One-Click Deploy
+## TODO:
 
-Deploy the example using [Vercel](https://vercel.com?utm_source=github&utm_medium=readme&utm_campaign=vercel-examples):
+- Increase frequency of checks (is 5 minutes enough? can go higher on some platforms if needed)
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fexamples%2Ftree%2Fmain%2Fpython%2Fhello-world&demo-title=Python%20Hello%20World&demo-description=Use%20Python%20on%20Vercel%20with%20Serverless%20Functions%20using%20the%20Python%20Runtime.&demo-url=https%3A%2F%2Fpython-hello-world.vercel.app%2F&demo-image=https://assets.vercel.com/image/upload/v1669994600/random/python.png)
+- Consider making post text shorter / more compact
+
+- Enable elevator incidents
+
+- Maybe: remove state via kv store and just check past interval (requires good scheduling to not miss any; might repeat posts sometimes)
+
+- Maybe: keep state but only store the date of the most recent posted update. Then post everything newer than that update.
+
+- Maybe: simply check own feed, and post anything newer than the timestamp of the last post (might miss anything between api check and post)
+    - better parse the timestamp of the update out of the last post!
+
+- Decide to keep or remove vercel compatability
+
+- Simplify vercel layout (remove silly additions from messing with cron triggers)
+
+- Make urls clickable via rich text (https://github.com/MarshalX/atproto/blob/main/examples/advanced_usage/send_rich_text.py)
+    - use detectFacets ? https://github.com/susumuota/nanoatp
+    - or just find start byte as "https://" and end byte as first whitespace after url? (might be too naive)
+
+- Support reposting long standing incidents (such as Green line currently) once a day or so.
+    - perhaps: if incident is older than 24 hours and time is within 1 interval of 8 am or 4 pm (commuting hours)?
+
+- Let manual posts not interfere with running (tag specifically bot posts, or pull more posts if the latest doesn't contain the time)
+

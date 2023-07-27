@@ -3,7 +3,7 @@ name: Discover incidents CRON
 
 on:
   schedule:
-    - cron: "0-50/10 * * * *"
+    - cron: "0-55/5 * * * *"
   workflow_call:
     secrets:
       BOT_HANDLE:
@@ -42,4 +42,5 @@ jobs:
           VERCEL_KV_REST_API_URL: ${{ secrets.VERCEL_KV_REST_API_URL }}
           VERCEL_KV_REST_API_TOKEN: ${{ secrets.VERCEL_KV_REST_API_TOKEN }}
           VERCEL_KV_REST_API_READ_ONLY_TOKEN: ${{ secrets.VERCEL_KV_REST_API_READ_ONLY_TOKEN }}
+          IS_DEPLOYED: "TRUE"
         run: pip install -r requirements.txt && python -m api.index
