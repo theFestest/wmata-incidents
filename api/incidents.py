@@ -34,6 +34,7 @@ def check_facets(facets: list):
     [{'$type': 'app.bsky.richtext.facet', 'index': {'byteStart': 148, 'byteEnd': 157}, 'features': [{'$type': 'app.bsky.richtext.facet#link', 'uri': 'Mt.Vernon'}]}]
     "Mt.Vernon"
     """
+    fixed = []
     for facet in facets:
         # If url ends in a dot we accidentally matched a period
         if facet['features'][0]['uri'][-1] == '.':
@@ -43,7 +44,14 @@ def check_facets(facets: list):
             # Take slice to skip the last character
             facet['features'][0]['uri'] = facet['features'][0]['uri'][:-1]
             print(f"Fixed uri: {facet['features'][0]['uri']}")
-    return facets
+            fixed.append(facet)
+        elif facet['features'][0]['uri'].lower() == "Mt.Vernon".lower():
+            # Not an actual url so skip this one.
+            pass
+        else:
+            # Nothing to fix
+            fixed.append(facet)
+    return fixed
 
 
 def send_post(text: str):
@@ -251,7 +259,7 @@ def make_train_incident_text(incident_dict: dict):
     return dedent(f"""
 Train incident reported for lines: {line_format(incident_dict['LinesAffected'])}.
 {incident_dict['IncidentType']}: {incident_dict['Description']}
-Updated: {datetime.fromisoformat(incident_dict['DateUpdated'])} (Eastern Time).
+Updated: {datetime.fromisoformat(incident_dict['DateUpdated'])} (Eastern).
 """).strip()
 
 
@@ -271,7 +279,7 @@ def make_bus_incident_text(incident_dict: dict):
     return dedent(f"""
 Bus incident reported for routes: {','.join(incident_dict['RoutesAffected'])}.
 {incident_dict['IncidentType']}: {incident_dict['Description']}
-Updated: {datetime.fromisoformat(incident_dict['DateUpdated'])} (Eastern Time).
+Updated: {datetime.fromisoformat(incident_dict['DateUpdated'])} (Eastern).
 """).strip()
 
 
@@ -299,8 +307,8 @@ def make_elevator_incident_text(incident_dict: dict):
     return dedent(f"""
 Elevator incident reported at: {incident_dict['StationName']}.
 {incident_dict['SymptomDescription']}: {incident_dict['LocationDescription']}.
-Estimated return: {datetime.fromisoformat(incident_dict['EstimatedReturnToService'])} (Eastern Time).
-Updated: {datetime.fromisoformat(incident_dict['DateUpdated'])} (Eastern Time).
+Estimated return: {datetime.fromisoformat(incident_dict['EstimatedReturnToService'])} (Eastern).
+Updated: {datetime.fromisoformat(incident_dict['DateUpdated'])} (Eastern).
 """).strip()
 
 
