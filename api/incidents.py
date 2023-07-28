@@ -299,7 +299,7 @@ def make_elevator_incident_text(incident_dict: dict):
     return dedent(f"""
 Elevator incident reported at: {incident_dict['StationName']}.
 {incident_dict['SymptomDescription']}: {incident_dict['LocationDescription']}.
-Estimated return to service: {datetime.fromisoformat(incident_dict['EstimatedReturnToService'])} (Eastern Time).
+Estimated return: {datetime.fromisoformat(incident_dict['EstimatedReturnToService'])} (Eastern Time).
 Updated: {datetime.fromisoformat(incident_dict['DateUpdated'])} (Eastern Time).
 """).strip()
 
