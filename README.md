@@ -42,7 +42,7 @@ Your Python API is now available at `http://localhost:3000/api`.
 
 ## TODO:
 
-- Increase frequency of checks (is 5 minutes enough? can go higher on some platforms if needed)
+- Increase frequency of checks (is 5 minutes enough? github actions doesn't keep to schedule well...)
 
 - Enable elevator incidents
 
@@ -54,6 +54,7 @@ Your Python API is now available at `http://localhost:3000/api`.
     - better parse the timestamp of the update out of the last post!
 
 - Decide to keep or remove vercel compatability
+    - nanoatp breaks compatability with python 3.9 on here?
 
 - Simplify vercel layout (remove silly additions from messing with cron triggers)
 
@@ -72,3 +73,7 @@ Your Python API is now available at `http://localhost:3000/api`.
     - see https://github.com/theFestest/wmata-incidents/actions/runs/5678804071/job/15389726708
 
 - Consider replacing internal newlines in provided info to preserve formatting
+
+- Retry posting without facets if posting with facets fails?
+
+- Make errors / error-reporting more visible

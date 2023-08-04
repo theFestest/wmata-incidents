@@ -1,4 +1,3 @@
-
 import datetime
 import os
 from typing import Union, Optional
@@ -30,9 +29,8 @@ def check_facets(facets: list):
     Incorrectly ends in period
     [{'$type': 'app.bsky.richtext.facet', 'index': {'byteStart': 149, 'byteEnd': 178}, 'features': [{'$type': 'app.bsky.richtext.facet#link', 'uri': 'https://buseta.wmata.com/#36.'}]}]
 
-    TODO: Also in correctly matches, fixable?
+    "Mt.Vernon" is not a valid uri but naively looks like one
     [{'$type': 'app.bsky.richtext.facet', 'index': {'byteStart': 148, 'byteEnd': 157}, 'features': [{'$type': 'app.bsky.richtext.facet#link', 'uri': 'Mt.Vernon'}]}]
-    "Mt.Vernon"
     """
     fixed = []
     for facet in facets:
@@ -48,6 +46,9 @@ def check_facets(facets: list):
         elif facet['features'][0]['uri'].lower() == "Mt.Vernon".lower():
             # Not an actual url so skip this one.
             pass
+        # elif facet['features'][0]['uri'].lower() == "N.W.".lower():
+        #     # Not an actual url so skip this one.
+        #     pass
         else:
             # Nothing to fix
             fixed.append(facet)
@@ -300,14 +301,21 @@ def make_elevator_incident_text(incident_dict: dict):
             // 'DisplayOrder': 0.0,
             'DateOutOfServ': '2023-05-05T05:09:00',
             'DateUpdated': '2023-06-27T09:13:17',
-            'EstimatedReturnToService': '2023-09-04T23:59:59'
+            'EstimatedReturnToService': '2023-09-04T23:59:59' // Somestimes is None TODO: add test for this
         }]
     }
     """
+    def return_date(incident_dict: dict) -> str:
+        date = incident_dict['EstimatedReturnToService']
+        if date is not None:
+            return datetime.fromisoformat(date)
+        else:
+            return str(date)
+
     return dedent(f"""
 Elevator incident reported at: {incident_dict['StationName']}.
 {incident_dict['SymptomDescription']}: {incident_dict['LocationDescription']}.
-Estimated return: {datetime.fromisoformat(incident_dict['EstimatedReturnToService'])} (Eastern).
+Estimated return: {return_date(incident_dict)} (Eastern).
 Updated: {datetime.fromisoformat(incident_dict['DateUpdated'])} (Eastern).
 """).strip()
 
@@ -347,9 +355,9 @@ def main():
     to_send.extend(
         [(make_bus_incident_text(incident), incident['IncidentID'], incident['DateUpdated']) for incident in new_bus]
         )
-    to_send.extend(
-        [(make_elevator_incident_text(incident), '_', incident['DateUpdated']) for incident in new_elevator]
-        )
+    # to_send.extend(
+    #     [(make_elevator_incident_text(incident), '_', incident['DateUpdated']) for incident in new_elevator]
+    #     )
 
     # Step 4: Send posts and update last post time in kv.
     posts = 0
