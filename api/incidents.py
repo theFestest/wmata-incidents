@@ -9,10 +9,13 @@ from datetime import datetime
 from atproto import Client, models
 from nanoatp.richtext import detectLinks
 
-IS_DEPLOYED = os.getenv("IS_DEPLOYED")
+MANUAL = os.getenv("MANUAL", "")
+IS_DEPLOYED = os.getenv("IS_DEPLOYED", "")
 WMATA_API_KEY = os.getenv("WMATA_API_KEY")
 BOT_HANDLE = os.getenv("BOT_HANDLE")
 BOT_APP_PASSWORD = os.getenv("BOT_APP_PASSWORD")
+
+MAX_POSTS_PER_RUN = 5
 
 # Vercel KV related args for state keeping.
 VERCEL_KV_URL = os.getenv("VERCEL_KV_URL")
@@ -34,6 +37,12 @@ def check_facets(facets: list):
     """
     fixed = []
     for facet in facets:
+        # if url lacks http:// or https://, manually include it
+        if facet['features'][0]['uri'].find("http://") == -1 and facet['features'][0]['uri'].find("https://") == -1:
+            print(f"Fixing facet for uri: {facet['features'][0]['uri']}")
+            facet['features'][0]['uri'] = f"https://{facet['features'][0]['uri']}"
+            print(f"Fixed uri: {facet['features'][0]['uri']}")
+            fixed.append(facet)
         # If url ends in a dot we accidentally matched a period
         if facet['features'][0]['uri'][-1] == '.':
             print(f"Fixing facet for uri: {facet['features'][0]['uri']}")
@@ -79,7 +88,7 @@ def send_post(text: str):
     print(f"Adjusted rich text facets: {facets}")
 
     try:
-        if IS_DEPLOYED is not None:
+        if IS_DEPLOYED or MANUAL:
             # Only bother embedding facets if there's a url.
             if len(facets) == 0:
                 at_client.send_post(text=text)
@@ -108,7 +117,7 @@ def at_login():
     global at_client
     at_client = Client()
     profile = at_client.login(BOT_HANDLE, BOT_APP_PASSWORD)
-    print("Logged in as: ", profile.displayName)
+    print("Logged in as: ", profile.display_name)
 
 
 def is_newer(update_time: Union[str, datetime], last_posted: Optional[Union[str, datetime]]) -> bool:
@@ -168,7 +177,7 @@ def get_latest_post_time():
         at_login()
 
     # Fetch feed of latest posts from this bot
-    feed_resp = at_client.bsky.feed.get_author_feed({"actor": BOT_HANDLE, "limit": 1})
+    feed_resp = at_client.app.bsky.feed.get_author_feed({"actor": BOT_HANDLE, "limit": 1})
     print(f"Got feed response:\n{feed_resp}")
     # Get post itself
     latest_post = feed_resp.feed[0].post
@@ -201,7 +210,7 @@ def find_new_incidents(incident_list, latest_post: datetime):
         if is_newer(incident["DateUpdated"], latest_post):
             print("Found new incident for processing...")
             new_incidents.append(incident)
-        elif IS_DEPLOYED is None:
+        elif not IS_DEPLOYED and not MANUAL:
             print("Appending old incident due to development config...")
             new_incidents.append(incident)
 
@@ -214,7 +223,7 @@ def find_new_incidents(incident_list, latest_post: datetime):
     #         # TODO: what happens if the key has never been used? returns '{"result":null}' i.e. None?
     #         if is_newer(incident["DateUpdated"], last_posted_update):
     #             new_incidents.append(incident)
-    #         elif IS_DEPLOYED is None:
+    #         elif not IS_DEPLOYED:
     #             print("Appending old post due to debug config")
     #             new_incidents.append(incident)
     # else:
@@ -341,19 +350,19 @@ def main():
     # Step 2: Collect relevant incidents (check latest_update for recency)
     new_train = find_new_incidents(train_resp.json()['Incidents'], latest_update)
     new_bus = find_new_incidents(bus_resp.json()['BusIncidents'], latest_update)
-    new_elevator = find_new_incidents(elevator_resp.json()['ElevatorIncidents'], latest_update)
+    # new_elevator = find_new_incidents(elevator_resp.json()['ElevatorIncidents'], latest_update)
 
     print(f"Got {len(new_train)} new train incidents")
     print(f"Got {len(new_bus)} new bus incidents")
-    print(f"Got {len(new_elevator)} elevator incidents")
+    # print(f"Got {len(new_elevator)} elevator incidents")
 
-    # Step 3: Generate posts to send (post_text, incident_id, date_updated)
-    to_send: list[(str, str, str)] = []
+    # Step 3: Generate posts to send (post_text, date_updated)
+    to_send: list[tuple[str, str]] = []
     to_send.extend(
-        [(make_train_incident_text(incident), incident['IncidentID'], incident['DateUpdated']) for incident in new_train]
+        [(make_train_incident_text(incident), incident['DateUpdated']) for incident in new_train]
         )
     to_send.extend(
-        [(make_bus_incident_text(incident), incident['IncidentID'], incident['DateUpdated']) for incident in new_bus]
+        [(make_bus_incident_text(incident), incident['DateUpdated']) for incident in new_bus]
         )
     # to_send.extend(
     #     [(make_elevator_incident_text(incident), '_', incident['DateUpdated']) for incident in new_elevator]
@@ -363,17 +372,17 @@ def main():
     posts = 0
     latest_post = None
     # Sort posts overall by the datetime of their update (newest last)
-    to_send.sort(key=lambda a: a[2])
+    to_send.sort(key=lambda a: a[1])
     for post_tuple in to_send:
-        print()
-        if IS_DEPLOYED is None:
+        if posts >= MAX_POSTS_PER_RUN and (IS_DEPLOYED or MANUAL):
+            print(f"Sent {MAX_POSTS_PER_RUN} posts, stopping to avoid spamming. {len(to_send)-MAX_POSTS_PER_RUN} to go next time.")
+            break
+        if not IS_DEPLOYED or MANUAL:
             # Pause before posting during development
             breakpoint()
         if send_post(post_tuple[0]):
-            # Only update kv with posts that successfully sent in case of send error
-            # update_last_posted(post_tuple[1], post_tuple[2])
             posts += 1
-            latest_post = post_tuple[2]
+            latest_post = post_tuple[1]
         else:
             print("Post failed! Moving on...")
 

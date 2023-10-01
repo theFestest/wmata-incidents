@@ -27,6 +27,10 @@ https://wmata.com/initiatives/Open-Data-Hub/MetroPulse.cfm
 
 https://www.pythonmorsels.com/dedent/
 
+https://github.com/MarshalX/atproto/blob/main/examples/advanced_usage/send_rich_text.py
+
+https://github.com/susumuota/nanoatp
+
 ## Demo
 
 https://python-hello-world.vercel.app/
@@ -42,25 +46,15 @@ Your Python API is now available at `http://localhost:3000/api`.
 
 ## TODO:
 
-- Increase frequency of checks (is 5 minutes enough? github actions doesn't keep to schedule well...)
+- fix post time zone
 
-- Enable elevator incidents
+- add posting limit
 
-- Maybe: remove state via kv store and just check past interval (requires good scheduling to not miss any; might repeat posts sometimes)
-
-- Maybe: keep state but only store the date of the most recent posted update. Then post everything newer than that update.
-
-- Maybe: simply check own feed, and post anything newer than the timestamp of the last post (might miss anything between api check and post)
-    - better parse the timestamp of the update out of the last post!
+- add dependency bot?
 
 - Decide to keep or remove vercel compatability
-    - nanoatp breaks compatability with python 3.9 on here?
 
 - Simplify vercel layout (remove silly additions from messing with cron triggers)
-
-- Make urls clickable via rich text (https://github.com/MarshalX/atproto/blob/main/examples/advanced_usage/send_rich_text.py)
-    - use detectFacets ? https://github.com/susumuota/nanoatp
-    - or just find start byte as "https://" and end byte as first whitespace after url? (might be too naive)
 
 - Support reposting long standing incidents (such as Green line currently) once a day or so.
     - perhaps: if incident is older than 24 hours and time is within 1 interval of 8 am or 4 pm (commuting hours)?
