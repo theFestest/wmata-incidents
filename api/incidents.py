@@ -1,10 +1,8 @@
-import datetime
 import os
 from typing import Union, Optional
 from textwrap import dedent
 
 import requests
-# from .vercel_kv import KV, KVConfig
 from datetime import datetime
 from atproto import Client, models
 from nanoatp.richtext import detectLinks
@@ -17,14 +15,7 @@ BOT_APP_PASSWORD = os.getenv("BOT_APP_PASSWORD")
 
 MAX_POSTS_PER_RUN = 5
 
-# Vercel KV related args for state keeping.
-VERCEL_KV_URL = os.getenv("VERCEL_KV_URL")
-VERCEL_KV_REST_API_URL = os.getenv("VERCEL_KV_REST_API_URL")
-VERCEL_KV_REST_API_TOKEN = os.getenv("VERCEL_KV_REST_API_TOKEN")
-VERCEL_KV_REST_API_READ_ONLY_TOKEN = os.getenv("VERCEL_KV_REST_API_READ_ONLY_TOKEN")
-
 at_client = None
-kv_client = None
 
 
 def check_facets(facets: list):
@@ -38,7 +29,7 @@ def check_facets(facets: list):
     fixed = []
     for facet in facets:
         # if url lacks http:// or https://, manually include it
-        if facet['features'][0]['uri'].find("http://") == -1 and facet['features'][0]['uri'].find("https://") == -1:
+        if not facet['features'][0]['uri'].startswith("http://") and not facet['features'][0]['uri'].startswith("https://"):
             print(f"Fixing facet for uri: {facet['features'][0]['uri']}")
             facet['features'][0]['uri'] = f"https://{facet['features'][0]['uri']}"
             print(f"Fixed uri: {facet['features'][0]['uri']}")
@@ -99,7 +90,7 @@ def send_post(text: str):
                         repo=at_client.me.did,
                         collection=models.ids.AppBskyFeedPost,
                         record=models.AppBskyFeedPost.Main(
-                            createdAt=datetime.now().isoformat(), text=text, facets=facets
+                            createdAt=at_client.get_current_time_iso(), text=text, facets=facets
                         )
                     )
                 )
@@ -148,19 +139,6 @@ def get_elevator_incidents() -> requests.Response:
     """
     pass
 
-
-# def login_kv():
-#     global kv_client
-#     kv_client = KV(
-#         kv_config=KVConfig(
-#             url=VERCEL_KV_URL,
-#             rest_api_url=VERCEL_KV_REST_API_URL,
-#             rest_api_token=VERCEL_KV_REST_API_TOKEN,
-#             rest_api_read_only_token=VERCEL_KV_REST_API_READ_ONLY_TOKEN
-#         )
-#     )
-
-
 def get_latest_post_time():
     """ Time corresponds to WMATA update time, not post time.
     Example reponse:
@@ -201,8 +179,6 @@ def find_new_incidents(incident_list, latest_post: datetime):
     """Collect new / updated incidents based on kv records
     """
     new_incidents = []
-    # if kv_client is None:
-    #     login_kv()
 
     # Active incidents are listed in reverse chronological order, reverse for posting.
     incident_list.reverse()
@@ -214,33 +190,7 @@ def find_new_incidents(incident_list, latest_post: datetime):
             print("Appending old incident due to development config...")
             new_incidents.append(incident)
 
-    # TODO: remove if we're confident the previous method performs just as well.
-    # if kv_client.has_auth():
-    #     # Active incidents are listed in reverse chronological order, reverse for posting.
-    #     incident_list.reverse()
-    #     for incident in incident_list:
-    #         last_posted_update = kv_client.get(incident["IncidentID"])
-    #         # TODO: what happens if the key has never been used? returns '{"result":null}' i.e. None?
-    #         if is_newer(incident["DateUpdated"], last_posted_update):
-    #             new_incidents.append(incident)
-    #         elif not IS_DEPLOYED:
-    #             print("Appending old post due to debug config")
-    #             new_incidents.append(incident)
-    # else:
-    #     print("Unable to access kv store to check incident history! Skipping to avoid post spam!")
     return new_incidents
-
-
-# def update_last_posted(incident_id, date_updated):
-#     """Store last updated time for this incident id in kv.
-#     """
-#     if kv_client is None:
-#         login_kv()
-
-#     if kv_client.has_auth():
-#         kv_client.set(incident_id, date_updated)
-#     else:
-#         print("Unable to access kv store to check incident history! Warning may post spam!")
 
 
 def make_train_incident_text(incident_dict: dict):

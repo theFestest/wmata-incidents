@@ -48,10 +48,6 @@ Your Python API is now available at `http://localhost:3000/api`.
 
 - fix post time zone
 
-- add posting limit
-
-- add dependency bot?
-
 - Decide to keep or remove vercel compatability
 
 - Simplify vercel layout (remove silly additions from messing with cron triggers)
