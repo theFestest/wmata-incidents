@@ -43,7 +43,7 @@ def check_facets(facets: list):
             facet['features'][0]['uri'] = facet['features'][0]['uri'][:-1]
             print(f"Fixed uri: {facet['features'][0]['uri']}")
             fixed.append(facet)
-        elif facet['features'][0]['uri'].lower() == "Mt.Vernon".lower():
+        elif facet['features'][0]['uri'].lower() in [x.lower() for x in ["Mt.Vernon", "D.C"]]:
             # Not an actual url so skip this one.
             pass
         # elif facet['features'][0]['uri'].lower() == "N.W.".lower():
@@ -155,7 +155,7 @@ def get_latest_post_time():
         at_login()
 
     # Fetch feed of latest posts from this bot
-    feed_resp = at_client.app.bsky.feed.get_author_feed({"actor": BOT_HANDLE, "limit": 1})
+    feed_resp = at_client.get_author_feed(actor=BOT_HANDLE, limit=1)
     print(f"Got feed response:\n{feed_resp}")
     # Get post itself
     latest_post = feed_resp.feed[0].post

@@ -46,6 +46,8 @@ Your Python API is now available at `http://localhost:3000/api`.
 
 ## TODO:
 
+- integrate newer api features: https://github.com/MarshalX/atproto/releases/tag/v0.0.34
+
 - fix post time zone
 
 - Decide to keep or remove vercel compatability
